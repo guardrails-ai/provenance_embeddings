@@ -10,7 +10,9 @@
 
 ## Description
 
-This validator uses embedding similarity to check if an LLM generated text can be supported by the sources. In order for this validator to work, a list of sources must be provided to which the LLM generated text can be  attributed.
+This validator uses embedding similarity to check if an LLM generated text can be supported by the sources. In order for this validator to work, a list of sources must be provided to which the LLM generated text can be  attributed. In order to use the validator, you must provide either of the following in the metadata:
+- a `query_function`: The `query_function` function should take a string as input (the LLM-generated text) and return a list of relevant chunks. The list should be sorted in ascending order by the distance between the chunk and the LLM-generated text.
+2. `sources` and `embed_function`: The `embed_function` should take a string or a list of strings as input and return a np array of floats. The vector should be normalized to unit length.
 
 Below is a step-wise breakdown of how the validator works:
 1. The list of sources is chunked based on user's parameters. 
