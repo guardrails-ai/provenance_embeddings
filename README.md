@@ -36,7 +36,7 @@ The primary intended uses are for RAG applications -- to check if a text is hall
 $ gudardrails hub install hub://guardrails/provenance_embeddings
 ```
 
-## Example Usage Guide
+## Usage Examples
 
 ### Validating string output via Python
 
