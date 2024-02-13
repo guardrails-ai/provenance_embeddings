@@ -71,7 +71,7 @@ model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 # Create embed function
 def embed_function(sources: list[str]) -> np.array:
-		return model.encode(sources)
+    return model.encode(sources)
 
 guard.parse(
     llm_output="The sun rises in the east.",
@@ -122,7 +122,7 @@ model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 # Create embed function
 def embed_function(sources: list[str]) -> np.array:
-		return model.encode(sources)
+    return model.encode(sources)
 
 # Run LLM output generating JSON through guard
 guard.parse("""
