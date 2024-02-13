@@ -54,7 +54,6 @@ from sentence_transformers import SentenceTransformer
 val = ProvenanceEmbeddings(
     threshold=0.8,
     validation_method="sentence",
-    embed_function=Callable
 )
 
 # Setup Guard
@@ -99,7 +98,6 @@ from sentence_transformers import SentenceTransformer
 val = ProvenanceEmbeddings(
     threshold=0.8,
     validation_method="sentence",
-    embed_function=Callable
 )
 
 # Create Pydantic BaseModel
