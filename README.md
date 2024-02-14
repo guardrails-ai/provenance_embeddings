@@ -137,11 +137,44 @@ guard.parse("""
 
 ## API Reference
 
-`__init__`
-- `threshold` - The minimum cosine similarity between the generated text and the source text. Defaults to 0.8.
-- `validation_method` - Whether to validate at the sentence level or over the full text. Must be one of `sentence` or `full`. Defaults to `sentence`
+
+**`__init__(self, threshold=0.8, validation_method="sentence", on_fail="noop")`**
+<ul>
+
+Initializes a new instance of the Validator class.
+
+**Parameters:**
+
+- **`threshold`** _(float):_ The minimum cosine similarity between the generated text and the source text. Defaults to 0.8.
+- **`validation_method`** _(str):_ Whether to validate at the sentence level or over the full text. Must be one of `sentence` or `full`. Defaults to `sentence`
+- **`on_fail`** *(str, Callable):* The policy to enact when a validator fails. If `str`, must be one of `reask`, `fix`, `filter`, `refrain`, `noop`, `exception` or `fix_reask`. Otherwise, must be a function that is called when the validator fails.
+
+</ul>
+
+<br>
+
+**`__call__(self, value, metadata={}) → ValidationOutcome`**
+
+<ul>
+
+Validates the given `value` using the rules defined in this validator, relying on the `metadata` provided to customize the validation process. This method is automatically invoked by `guard.parse(...)`, ensuring the validation logic is applied to the input data.
+
+Note:
+
+1. This method should not be called directly by the user. Instead, invoke `guard.parse(...)` where this method will be called internally for each associated Validator.
+2. When invoking `guard.parse(...)`, ensure to pass the appropriate `metadata` dictionary that includes keys and values required by this validator. If `guard` is associated with multiple validators, combine all necessary metadata into a single dictionary.
+
+**Parameters:**
+
+- **`value`** *(Any):* The input value to validate.
+- **`metadata`** *(dict):* A dictionary containing metadata required for validation. Keys and values must match the expectations of this validator.
     
-`__call__`    
-- `query_function` *Callable, optional* - A callable that takes a string and returns a list of (chunk, score) tuples. In order to use this validator, you must provide either a `query_function` or `sources` with an `embed_function` in the metadata. The query_function should take a string as input and return a list of (chunk, score) tuples. The chunk is a string and the score is a float representing the cosine distance between the chunk and the input string. The list should be sorted in ascending order by score.
-- `sources` *List[str], optional* - The source text. In order to use this validator, you must provide either a `query_function` or `sources` with an `embed_function` in the metadata. 
-- `embed_function` *Callable, optional* - A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats.
+    
+    | Key | Type | Description | Default |
+    | --- | --- | --- | --- |
+    | `query_function` | _Optional[Callable]_ | A callable that takes a string and returns a list of (chunk, score) tuples. In order to use this validator, you must provide either a `query_function` or `sources` with an `embed_function` in the metadata. The query_function should take a string as input and return a list of (chunk, score) tuples. The chunk is a string and the score is a float representing the cosine distance between the chunk and the input string. The list should be sorted in ascending order by score. | None |
+    | `sources` | *Optional[List[str]]* | The source text. In order to use this validator, you must provide either a `query_function` or `sources` with an `embed_function` in the metadata. | None |
+    | `embed_function` | *Optional[Callable]* | A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats. | None |
+  
+
+</ul>
