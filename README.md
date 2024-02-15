@@ -33,7 +33,7 @@ The primary intended uses are for RAG applications -- to check if a text is hall
 ## Installation
 
 ```bash
-$ gudardrails hub install hub://guardrails/provenance_embeddings
+$ guardrails hub install hub://guardrails/provenance_embeddings
 ```
 
 ## Usage Examples
