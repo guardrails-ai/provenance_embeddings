@@ -1,14 +1,9 @@
-import contextvars
 import itertools
-import os
 import warnings
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
-from tenacity import retry, stop_after_attempt, wait_random_exponential
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from guardrails.utils.docs_utils import get_chunks_from_text
-from guardrails.utils.openai_utils import OpenAIClient
 from guardrails.validator_base import (
     FailResult,
     PassResult,
@@ -17,24 +12,8 @@ from guardrails.validator_base import (
     register_validator,
 )
 
-try:
-    import numpy as np
-except ImportError:
-    _HAS_NUMPY = False
-else:
-    _HAS_NUMPY = True
-
-try:
-    import nltk  # type: ignore
-except ImportError:
-    nltk = None  # type: ignore
-
-if nltk is not None:
-    try:
-        nltk.data.find("tokenizers/punkt")
-    except LookupError:
-        nltk.download("punkt")
-
+import nltk
+import numpy as np
 
 @register_validator(name="guardrails/provenance_embeddings", data_type="string")
 class ProvenanceEmbeddings(Validator):
@@ -45,19 +24,23 @@ class ProvenanceEmbeddings(Validator):
 
     | Property                      | Description                         |
     | ----------------------------- | ----------------------------------- |
-    | Name for `format` attribute   | `provenance-v0`                     |
+    | Name for `format` attribute   | `guardrails/provenance_embeddings`  |
     | Supported data types          | `string`                            |
     | Programmatic fix              | None                                |
 
     Args:
-        threshold: The minimum cosine similarity between the generated text and
-            the source text. Defaults to 0.8.
-        validation_method: Whether to validate at the sentence level or over the full text.  Must be one of `sentence` or `full`. Defaults to `sentence`
+        threshold: The minimum cosine distance between the generated text and
+            the source text. Defaults to 0.8. Lower the threshold, the more
+            number of dissimilar sentences will be flagged.
+        validation_method: Whether to validate at the sentence level OR full text.  
+            Must be one of `sentence` or `full`. Defaults to `sentence`
 
     Other parameters: Metadata
-        query_function (Callable, optional): A callable that takes a string and returns a list of (chunk, score) tuples.
+        query_function (Callable, optional): A callable that takes a string and returns 
+            a list of (chunk, score) tuples.
         sources (List[str], optional): The source text.
-        embed_function (Callable, optional): A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats.
+        embed_function (Callable, optional): A callable that creates embeddings for the sources. 
+            Must accept a list of strings and return an np.array of floats.
 
     In order to use this validator, you must provide either a `query_function` or
     `sources` with an `embed_function` in the metadata.
@@ -67,7 +50,7 @@ class ProvenanceEmbeddings(Validator):
     the cosine distance between the chunk and the input string. The list should be
     sorted in ascending order by score.
 
-    Note: The score should represent distance in embedding space, not similarity. I.e.,
+    Note: The score should represent distance in embedding space, not similarity. i.e.,
     lower is better and the score should be 0 if the chunk is identical to the input
     string.
 
@@ -124,6 +107,11 @@ class ProvenanceEmbeddings(Validator):
         self._validation_method = validation_method
 
     def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
+        """Get the query function from metadata.
+        
+        If `query_function` is provided, it will be used. Otherwise, `sources` and
+        `embed_function` will be used to create a default query function.
+        """
         query_fn = metadata.get("query_function", None)
         sources = metadata.get("sources", None)
 
@@ -178,11 +166,8 @@ class ProvenanceEmbeddings(Validator):
     def validate_each_sentence(
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
     ) -> ValidationResult:
-        if nltk is None:
-            raise ImportError(
-                "`nltk` library is required for `provenance-v0` validator. "
-                "Please install it with `poetry add nltk`."
-            )
+        """Validate each sentence in the response."""
+
         # Split the value into sentences using nltk sentence tokenizer.
         sentences = nltk.sent_tokenize(value)
 
@@ -217,6 +202,7 @@ class ProvenanceEmbeddings(Validator):
     def validate_full_text(
         self, value: Any, query_function: Callable, metadata: Dict[str, Any]
     ) -> ValidationResult:
+        """Validate the full text in the response."""
         most_similar_chunks = query_function(text=value, k=1)
         if most_similar_chunks is None:
             metadata["unsupported_text"] = value
@@ -247,14 +233,13 @@ class ProvenanceEmbeddings(Validator):
         return PassResult(metadata=metadata)
 
     def validate(self, value: Any, metadata: Dict[str, Any]) -> ValidationResult:
+        """Validation function for the ProvenanceEmbeddings validator."""
         query_function = self.get_query_function(metadata)
 
         if self._validation_method == "sentence":
             return self.validate_each_sentence(value, query_function, metadata)
-        elif self._validation_method == "full":
+        if self._validation_method == "full":
             return self.validate_full_text(value, query_function, metadata)
-        else:
-            raise ValueError("validation_method must be 'sentence' or 'full'.")
 
     @staticmethod
     def query_vector_collection(
@@ -279,12 +264,6 @@ class ProvenanceEmbeddings(Validator):
 
         # Compute distances
         if distance_metric == "cosine":
-            if not _HAS_NUMPY:
-                raise ValueError(
-                    "You must install numpy in order to use the cosine distance "
-                    "metric."
-                )
-
             cos_sim = 1 - (
                 np.dot(source_embeddings, query_embedding)
                 / (
@@ -299,6 +278,3 @@ class ProvenanceEmbeddings(Validator):
             raise ValueError("distance_metric must be 'cosine'.")
 
         return list(zip(top_chunks, top_similarities))
-
-    def to_prompt(self, with_keywords: bool = True) -> str:
-        return ""
