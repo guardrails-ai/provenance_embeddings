@@ -1,5 +1,7 @@
 import itertools
 import warnings
+import nltk
+import numpy as np
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -11,9 +13,7 @@ from guardrails.validator_base import (
     Validator,
     register_validator,
 )
-
-import nltk
-import numpy as np
+from sentence_transformers import SentenceTransformer
 
 @register_validator(name="guardrails/provenance_embeddings", data_type="string")
 class ProvenanceEmbeddings(Validator):
@@ -149,10 +149,12 @@ class ProvenanceEmbeddings(Validator):
         # Check embed model
         embed_function = metadata.get("embed_function", None)
         if embed_function is None:
-            raise ValueError(
-                "You must provide `embed_function` in metadata in order to "
-                "use the default query function."
-            )
+            # Load model for embedding function
+            MODEL = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+            # Create embed function
+            def st_embed_function(sources: list[str]):
+                return MODEL.encode(sources)
+            embed_function = st_embed_function
         return partial(
             self.query_vector_collection,
             sources=metadata["sources"],
@@ -238,8 +240,7 @@ class ProvenanceEmbeddings(Validator):
 
         if self._validation_method == "sentence":
             return self.validate_each_sentence(value, query_function, metadata)
-        if self._validation_method == "full":
-            return self.validate_full_text(value, query_function, metadata)
+        return self.validate_full_text(value, query_function, metadata)
 
     @staticmethod
     def query_vector_collection(

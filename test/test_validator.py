@@ -59,8 +59,7 @@ class ValidatorTestObject(BaseModel):
             }
             """,
             {
-                "sources": SOURCES,
-                "embed_function": embed_function
+                "sources": SOURCES
             }
         )
     ],
