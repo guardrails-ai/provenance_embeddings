@@ -142,7 +142,7 @@ Note:
     | --- | --- | --- | --- |
     | `query_function` | _Optional[Callable]_ | A callable that takes a string and returns a list of (chunk, score) tuples. In order to use this validator, you must provide either a `query_function` or `sources` with an `embed_function` in the metadata. The query_function should take a string as input and return a list of (chunk, score) tuples. The chunk is a string and the score is a float representing the cosine distance between the chunk and the input string. The list should be sorted in ascending order by score. | None |
     | `sources` | *Optional[List[str]]* | The source text. In order to use this validator, you must provide either a `query_function` or `sources` with an `embed_function` in the metadata. | None |
-    | `embed_function` | *Optional[Callable]* | A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats. | None |
+    | `embed_function` | *Optional[Callable]* | A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats. | sentence-transformer's `paraphrase-MiniLM-L6-v2` |
   
 
 </ul>
