@@ -32,7 +32,7 @@ The primary intended uses are for RAG applications -- to check if a text is hall
     - guardrails-ai>=0.4.0
 
 
-* To use in an example: 
+* To use in an example:
     - `sentence-transformers`
     - `chromadb`
 
@@ -42,7 +42,7 @@ The primary intended uses are for RAG applications -- to check if a text is hall
 ## Installation
 
 ```bash
-guardrails hub install hub://guardrails/provenance_embeddings
+$ guardrails hub install hub://guardrails/provenance_embeddings
 ```
 
 ## Usage Examples
@@ -129,7 +129,7 @@ Initializes a new instance of the Validator class.
 
 <br>
 
-**`__call__(self, value, metadata={}) → ValidationResult`**
+**`__call__(self, value, metadata={}) -> ValidationResult`**
 
 <ul>
 
