@@ -27,9 +27,10 @@ The primary intended uses are for RAG applications -- to check if a text is hall
 ### Requirements
 
 * Dependencies:
-	- guardrails-ai>=0.4.0
     - `numpy`
     - `nltk`
+    - guardrails-ai>=0.4.0
+
 
 * To use in an example: 
     - `sentence-transformers`
