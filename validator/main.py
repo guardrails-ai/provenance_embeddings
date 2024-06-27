@@ -12,11 +12,8 @@ from guardrails.validator_base import (
     ValidationResult,
     Validator,
     register_validator,
-    ErrorSpan
 )
 from sentence_transformers import SentenceTransformer
-
-
 
 @register_validator(name="guardrails/provenance_embeddings", data_type="string")
 class ProvenanceEmbeddings(Validator):
@@ -99,7 +96,6 @@ class ProvenanceEmbeddings(Validator):
         threshold: float = 0.8,
         validation_method: str = "sentence",
         on_fail: Optional[Callable] = None,
-        query_function: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(
@@ -109,7 +105,6 @@ class ProvenanceEmbeddings(Validator):
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
-        self._query_function = query_function
 
     def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         """Get the query function from metadata.
@@ -119,9 +114,6 @@ class ProvenanceEmbeddings(Validator):
         """
         query_fn = metadata.get("query_function", None)
         sources = metadata.get("sources", None)
-
-        if query_fn is None:
-            query_fn = self._query_function
 
         # Check that query_fn or sources are provided
         if query_fn is not None:
@@ -183,39 +175,16 @@ class ProvenanceEmbeddings(Validator):
 
         unsupported_sentences = []
         supported_sentences = []
-        error_span_offset = 0
-        error_spans: List[ErrorSpan] = []
         for sentence in sentences:
             most_similar_chunks = query_function(text=sentence, k=1)
             if most_similar_chunks is None:
                 unsupported_sentences.append(sentence)
-                error_spans.append(
-                    ErrorSpan(
-                        start=error_span_offset,
-                        end=error_span_offset + len(sentence),
-                        reason="This sentence is unsupported by the provided context. No similar chunk was found."
-                    )
-                )
                 continue
             most_similar_chunk = most_similar_chunks[0]
             if most_similar_chunk[1] < self._threshold:
                 supported_sentences.append((sentence, most_similar_chunk[0]))
             else:
                 unsupported_sentences.append(sentence)
-                error_spans.append(
-                    ErrorSpan(
-                        start=error_span_offset,
-                        end=error_span_offset + len(sentence),
-                        reason=f"""\
-This sentence is unsupported by the provided context. The most similar text was:
-"{most_similar_chunk[0]}"
-
-The distance of this chunk was {most_similar_chunk[1]:.2f} which is above the threshold of {self._threshold:.2f}.
-"""
-                    )
-                )
-
-            error_span_offset += len(sentence)
 
         metadata["unsupported_sentences"] = "- " + "\n- ".join(unsupported_sentences)
         metadata["supported_sentences"] = supported_sentences
@@ -228,7 +197,6 @@ The distance of this chunk was {most_similar_chunk[1]:.2f} which is above the th
                     "by provided context:"
                     f"\n{metadata['unsupported_sentences']}"
                 ),
-                error_spans=error_spans,
                 fix_value="\n".join(s[0] for s in supported_sentences),
             )
         return PassResult(metadata=metadata)
