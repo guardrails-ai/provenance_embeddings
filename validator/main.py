@@ -1,12 +1,13 @@
 import itertools
 import warnings
-import nltk
-import numpy as np
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import nltk
+import numpy as np
 from guardrails.utils.docs_utils import get_chunks_from_text
 from guardrails.validator_base import (
+    ErrorSpan,
     FailResult,
     PassResult,
     ValidationResult,
@@ -14,6 +15,7 @@ from guardrails.validator_base import (
     register_validator,
 )
 from sentence_transformers import SentenceTransformer
+
 
 @register_validator(name="guardrails/provenance_embeddings", data_type="string")
 class ProvenanceEmbeddings(Validator):
@@ -32,14 +34,14 @@ class ProvenanceEmbeddings(Validator):
         threshold: The minimum cosine distance between the generated text and
             the source text. Defaults to 0.8. Lower the threshold, the more
             number of dissimilar sentences will be flagged.
-        validation_method: Whether to validate at the sentence level OR full text.  
+        validation_method: Whether to validate at the sentence level OR full text.
             Must be one of `sentence` or `full`. Defaults to `sentence`
 
     Other parameters: Metadata
-        query_function (Callable, optional): A callable that takes a string and returns 
+        query_function (Callable, optional): A callable that takes a string and returns
             a list of (chunk, score) tuples.
         sources (List[str], optional): The source text.
-        embed_function (Callable, optional): A callable that creates embeddings for the sources. 
+        embed_function (Callable, optional): A callable that creates embeddings for the sources.
             Must accept a list of strings and return an np.array of floats.
 
     In order to use this validator, you must provide either a `query_function` or
@@ -96,6 +98,7 @@ class ProvenanceEmbeddings(Validator):
         threshold: float = 0.8,
         validation_method: str = "sentence",
         on_fail: Optional[Callable] = None,
+        query_function: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(
@@ -105,15 +108,19 @@ class ProvenanceEmbeddings(Validator):
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
+        self._query_function = query_function
 
     def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         """Get the query function from metadata.
-        
+
         If `query_function` is provided, it will be used. Otherwise, `sources` and
         `embed_function` will be used to create a default query function.
         """
         query_fn = metadata.get("query_function", None)
         sources = metadata.get("sources", None)
+
+        if query_fn is None:
+            query_fn = self._query_function
 
         # Check that query_fn or sources are provided
         if query_fn is not None:
@@ -151,9 +158,11 @@ class ProvenanceEmbeddings(Validator):
         if embed_function is None:
             # Load model for embedding function
             MODEL = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+
             # Create embed function
             def st_embed_function(sources: list[str]):
                 return MODEL.encode(sources)
+
             embed_function = st_embed_function
         return partial(
             self.query_vector_collection,
@@ -175,16 +184,39 @@ class ProvenanceEmbeddings(Validator):
 
         unsupported_sentences = []
         supported_sentences = []
+        error_span_offset = 0
+        error_spans: List[ErrorSpan] = []
         for sentence in sentences:
             most_similar_chunks = query_function(text=sentence, k=1)
             if most_similar_chunks is None:
                 unsupported_sentences.append(sentence)
+                error_spans.append(
+                    ErrorSpan(
+                        start=error_span_offset,
+                        end=error_span_offset + len(sentence),
+                        reason="This sentence is unsupported by the provided context. No similar chunk was found.",
+                    )
+                )
                 continue
             most_similar_chunk = most_similar_chunks[0]
             if most_similar_chunk[1] < self._threshold:
                 supported_sentences.append((sentence, most_similar_chunk[0]))
             else:
                 unsupported_sentences.append(sentence)
+                error_spans.append(
+                    ErrorSpan(
+                        start=error_span_offset,
+                        end=error_span_offset + len(sentence),
+                        reason=f"""\
+This sentence is unsupported by the provided context. The most similar text was:
+"{most_similar_chunk[0]}"
+
+The distance of this chunk was {most_similar_chunk[1]:.2f} which is above the threshold of {self._threshold:.2f}.
+""",
+                    )
+                )
+
+            error_span_offset += len(sentence)
 
         metadata["unsupported_sentences"] = "- " + "\n- ".join(unsupported_sentences)
         metadata["supported_sentences"] = supported_sentences
@@ -197,6 +229,7 @@ class ProvenanceEmbeddings(Validator):
                     "by provided context:"
                     f"\n{metadata['unsupported_sentences']}"
                 ),
+                error_spans=error_spans,
                 fix_value="\n".join(s[0] for s in supported_sentences),
             )
         return PassResult(metadata=metadata)
