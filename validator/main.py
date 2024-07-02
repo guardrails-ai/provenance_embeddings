@@ -1,21 +1,20 @@
 import itertools
 import warnings
-import nltk
-import numpy as np
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import nltk
+import numpy as np
 from guardrails.utils.docs_utils import get_chunks_from_text
 from guardrails.validator_base import (
+    ErrorSpan,
     FailResult,
     PassResult,
     ValidationResult,
     Validator,
     register_validator,
-    ErrorSpan
 )
 from sentence_transformers import SentenceTransformer
-
 
 
 @register_validator(name="guardrails/provenance_embeddings", data_type="string")
@@ -35,14 +34,14 @@ class ProvenanceEmbeddings(Validator):
         threshold: The minimum cosine distance between the generated text and
             the source text. Defaults to 0.8. Lower the threshold, the more
             number of dissimilar sentences will be flagged.
-        validation_method: Whether to validate at the sentence level OR full text.  
+        validation_method: Whether to validate at the sentence level OR full text.
             Must be one of `sentence` or `full`. Defaults to `sentence`
 
     Other parameters: Metadata
-        query_function (Callable, optional): A callable that takes a string and returns 
+        query_function (Callable, optional): A callable that takes a string and returns
             a list of (chunk, score) tuples.
         sources (List[str], optional): The source text.
-        embed_function (Callable, optional): A callable that creates embeddings for the sources. 
+        embed_function (Callable, optional): A callable that creates embeddings for the sources.
             Must accept a list of strings and return an np.array of floats.
 
     In order to use this validator, you must provide either a `query_function` or
@@ -113,7 +112,7 @@ class ProvenanceEmbeddings(Validator):
 
     def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         """Get the query function from metadata.
-        
+
         If `query_function` is provided, it will be used. Otherwise, `sources` and
         `embed_function` will be used to create a default query function.
         """
@@ -159,9 +158,11 @@ class ProvenanceEmbeddings(Validator):
         if embed_function is None:
             # Load model for embedding function
             MODEL = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+
             # Create embed function
             def st_embed_function(sources: list[str]):
                 return MODEL.encode(sources)
+
             embed_function = st_embed_function
         return partial(
             self.query_vector_collection,
@@ -193,7 +194,7 @@ class ProvenanceEmbeddings(Validator):
                     ErrorSpan(
                         start=error_span_offset,
                         end=error_span_offset + len(sentence),
-                        reason="This sentence is unsupported by the provided context. No similar chunk was found."
+                        reason="This sentence is unsupported by the provided context. No similar chunk was found.",
                     )
                 )
                 continue
@@ -211,7 +212,7 @@ This sentence is unsupported by the provided context. The most similar text was:
 "{most_similar_chunk[0]}"
 
 The distance of this chunk was {most_similar_chunk[1]:.2f} which is above the threshold of {self._threshold:.2f}.
-"""
+""",
                     )
                 )
 
