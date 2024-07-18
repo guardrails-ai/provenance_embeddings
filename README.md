@@ -1,7 +1,6 @@
 ## Overview
 
 | Developed by | Guardrails AI |
-| --- | --- |
 | Date of development | Feb 15, 2024 |
 | Validator type | RAG |
 | Blog | https://www.guardrailsai.com/blog/reduce-ai-hallucinations-provenance-guardrails |
@@ -25,16 +24,25 @@ Below is a step-wise breakdown of how the validator works:
 
 The primary intended uses are for RAG applications -- to check if a text is hallucinated by establishing a source (i.e. provenance) for any LLM generated text. Out of scope use cases are general question answering without RAG or text grounding. You can use a combination of RAG and this validator on the output to implement Retrieval-Augmented Validated Generation (RAVG).
 
-### Resources required
+### Requirements
 
-* Dependencies: `numpy`, `nltk`
-* To use in an example: `sentence-transformers` or `chromadb`
-* Foundation model access keys: Yes (depending on which model is used for embeddings)
+* Dependencies:
+    - `numpy`
+    - `nltk`
+    - guardrails-ai>=0.4.0
+
+
+* To use in an example:
+    - `sentence-transformers`
+    - `chromadb`
+
+* Foundation model access keys: 
+    - Yes (depending on which model is used for embeddings)
 
 ## Installation
 
 ```bash
-guardrails hub install hub://guardrails/provenance_embeddings
+$ guardrails hub install hub://guardrails/provenance_embeddings
 ```
 
 ## Usage Examples
@@ -103,7 +111,7 @@ Validation failed for field with errors: None of the following sentences in your
 - Pluto is the farthest planet from the sun.
 ```
 
-## API Reference
+# API Reference
 
 
 **`__init__(self, threshold=0.8, validation_method="sentence", on_fail="noop")`**
@@ -121,7 +129,7 @@ Initializes a new instance of the Validator class.
 
 <br>
 
-**`__call__(self, value, metadata={}) → ValidationResult`**
+**`__call__(self, value, metadata={}) -> ValidationResult`**
 
 <ul>
 
