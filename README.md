@@ -154,5 +154,3 @@ Note:
     | `embed_function` | *Optional[Callable]* | A callable that creates embeddings for the sources. Must accept a list of strings and return an np.array of floats. | sentence-transformer's `paraphrase-MiniLM-L6-v2` |
 
 </ul>
-
-</ul>
