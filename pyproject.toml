@@ -1,6 +1,6 @@
 [project]
 name = "provenance_embeddings"
-version = "0.0.0"
+version = "0.0.1"
 description = "Validates that LLM-generated text matches some source text based on distance in embedding space."
 authors = [
     {name = "Guardrails AI", email = "contact@guardrailsai.com"}
