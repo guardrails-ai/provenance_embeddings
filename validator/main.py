@@ -105,6 +105,7 @@ class ProvenanceEmbeddings(Validator):
         if validation_method not in ["sentence", "full"]:
             raise ValueError("validation_method must be 'sentence' or 'full'.")
         self._validation_method = validation_method
+        self._default_model = None
 
     def get_query_function(self, metadata: Dict[str, Any]) -> Callable:
         """Get the query function from metadata.
@@ -150,7 +151,9 @@ class ProvenanceEmbeddings(Validator):
         embed_function = metadata.get("embed_function", None)
         if embed_function is None:
             # Load model for embedding function
-            MODEL = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+            if not self._default_model:
+                self._default_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+            MODEL = self._default_model
             # Create embed function
             def st_embed_function(sources: list[str]):
                 return MODEL.encode(sources)
