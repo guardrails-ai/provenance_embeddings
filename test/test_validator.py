@@ -67,7 +67,7 @@ class ValidatorTestObject(BaseModel):
 def test_happy_path(value, metadata):
     """Test the happy path for the validator."""
     # Create a guard from the pydantic model
-    guard = Guard.from_pydantic(output_class=ValidatorTestObject)
+    guard = Guard.for_pydantic(output_class=ValidatorTestObject)
     response = guard.parse(value, metadata=metadata)
     print("Happy path response", response)
     assert response.validation_passed is True
@@ -125,7 +125,7 @@ def test_happy_path(value, metadata):
 )
 def test_fail_path(value, metadata):
     # Create a guard from the pydantic model
-    guard = Guard.from_pydantic(output_class=ValidatorTestObject)
+    guard = Guard.for_pydantic(output_class=ValidatorTestObject)
 
     with pytest.raises(Exception):
         response = guard.parse(value, metadata=metadata)

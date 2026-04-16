@@ -195,12 +195,12 @@ class ProvenanceEmbeddings(Validator):
             unsupported_sentences = "- " + "\n- ".join(unsupported_sentences)
             return FailResult(
                 metadata=metadata,
-                error_message=(
+                errorMessage=(
                     f"None of the following sentences in your response are supported "
                     "by provided context:"
                     f"\n{metadata['unsupported_sentences']}"
                 ),
-                fix_value="\n".join(s[0] for s in supported_sentences),
+                fixValue="\n".join(s[0] for s in supported_sentences),
             )
         return PassResult(metadata=metadata)
 
@@ -214,7 +214,7 @@ class ProvenanceEmbeddings(Validator):
             metadata["supported_text_citations"] = {}
             return FailResult(
                 metadata=metadata,
-                error_message=(
+                errorMessage=(
                     "The following text in your response is not supported by the "
                     "supported by the provided context:\n" + value
                 ),
@@ -225,7 +225,7 @@ class ProvenanceEmbeddings(Validator):
             metadata["supported_text_citations"] = {}
             return FailResult(
                 metadata=metadata,
-                error_message=(
+                errorMessage=(
                     "The following text in your response is not supported by the "
                     "supported by the provided context:\n" + value
                 ),
