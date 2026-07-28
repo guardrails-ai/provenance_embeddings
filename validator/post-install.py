@@ -4,7 +4,6 @@ from sentence_transformers import SentenceTransformer
 # Download NLTK data if not already present
 def load_nltk_data():
     import re
-    import nltk
     from importlib.metadata import version
 
     nltk_version = version("nltk")
